@@ -1,10 +1,6 @@
-require 'json'
-
-package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
-
 Pod::Spec.new do |s|
   s.name         = "react-native-maps"
-  s.version      = package['version']
+  s.version      = "0.12.4"
   s.summary      = "React Native Mapview component for iOS + Android"
 
   s.authors      = { "intelligibabble" => "leland.m.richardson@gmail.com" }
@@ -13,7 +9,7 @@ Pod::Spec.new do |s|
   s.platform     = :ios, "8.0"
 
   s.source       = { :git => "https://github.com/airbnb/react-native-maps.git" }
-  s.source_files  = "lib/ios/AirMaps/**/*.{h,m}"
+  s.source_files  = "ios/AirMaps/**/*.{h,m}"
 
   s.dependency 'React'
 end
