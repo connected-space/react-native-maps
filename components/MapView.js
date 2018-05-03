@@ -1,67 +1,63 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
 
 import {
   EdgeInsetsPropType,
   Platform,
   View,
+  ViewPropTypes,
   Animated,
   requireNativeComponent,
   NativeModules,
   ColorPropType,
-  findNodeHandle,
-} from 'react-native';
-import MapMarker from './MapMarker';
-import MapPolyline from './MapPolyline';
-import MapPolygon from './MapPolygon';
-import MapCircle from './MapCircle';
-import MapCallout from './MapCallout';
-import MapUrlTile from './MapUrlTile';
-import AnimatedRegion from './AnimatedRegion';
+  findNodeHandle
+} from 'react-native'
+import MapMarker from './MapMarker'
+import MapPolyline from './MapPolyline'
+import MapPolygon from './MapPolygon'
+import MapCircle from './MapCircle'
+import MapCallout from './MapCallout'
+import MapUrlTile from './MapUrlTile'
+import AnimatedRegion from './AnimatedRegion'
 import {
   contextTypes as childContextTypes,
   getAirMapName,
   googleMapIsInstalled,
-  createNotSupportedComponent,
-} from './decorateMapComponent';
-import * as ProviderConstants from './ProviderConstants';
+  createNotSupportedComponent
+} from './decorateMapComponent'
+import * as ProviderConstants from './ProviderConstants'
 
 const MAP_TYPES = {
   STANDARD: 'standard',
   SATELLITE: 'satellite',
   HYBRID: 'hybrid',
   TERRAIN: 'terrain',
-  NONE: 'none',
-};
+  NONE: 'none'
+}
 
-const GOOGLE_MAPS_ONLY_TYPES = [
-  MAP_TYPES.TERRAIN,
-  MAP_TYPES.NONE,
-];
+const GOOGLE_MAPS_ONLY_TYPES = [MAP_TYPES.TERRAIN, MAP_TYPES.NONE]
 
 const viewConfig = {
   uiViewClassName: 'AIR<provider>Map',
   validAttributes: {
-    region: true,
-  },
-};
+    region: true
+  }
+}
 
 const propTypes = {
-  ...View.propTypes,
+  ...ViewPropTypes,
   /**
    * When provider is "google", we will use GoogleMaps.
    * Any value other than "google" will default to using
    * MapKit in iOS or GoogleMaps in android as the map provider.
    */
-  provider: PropTypes.oneOf([
-    'google',
-  ]),
+  provider: PropTypes.oneOf(['google']),
 
   /**
    * Used to style and layout the `MapView`.  See `StyleSheet.js` and
    * `ViewStylePropTypes.js` for more info.
    */
-  style: View.propTypes.style,
+  style: ViewPropTypes.style,
 
   /**
    * A json object that describes the style of the map. This is transformed to a string
@@ -248,7 +244,7 @@ const propTypes = {
      * to be displayed.
      */
     latitudeDelta: PropTypes.number.isRequired,
-    longitudeDelta: PropTypes.number.isRequired,
+    longitudeDelta: PropTypes.number.isRequired
   }),
 
   /**
@@ -271,7 +267,7 @@ const propTypes = {
      * to be displayed.
      */
     latitudeDelta: PropTypes.number.isRequired,
-    longitudeDelta: PropTypes.number.isRequired,
+    longitudeDelta: PropTypes.number.isRequired
   }),
 
   /**
@@ -367,115 +363,116 @@ const propTypes = {
    * Callback that is called when a drag on a marker finishes. This is usually the point you
    * will want to setState on the marker's coordinate again
    */
-  onMarkerDragEnd: PropTypes.func,
-
-};
+  onMarkerDragEnd: PropTypes.func
+}
 
 class MapView extends React.Component {
   constructor(props) {
-    super(props);
+    super(props)
 
     this.state = {
-      isReady: Platform.OS === 'ios',
-    };
+      isReady: Platform.OS === 'ios'
+    }
 
-    this._onMapReady = this._onMapReady.bind(this);
-    this._onChange = this._onChange.bind(this);
-    this._onLayout = this._onLayout.bind(this);
+    this._onMapReady = this._onMapReady.bind(this)
+    this._onChange = this._onChange.bind(this)
+    this._onLayout = this._onLayout.bind(this)
   }
 
   getChildContext() {
-    return { provider: this.props.provider };
+    return { provider: this.props.provider }
   }
 
   componentWillUpdate(nextProps) {
-    const a = this.__lastRegion;
-    const b = nextProps.region;
-    if (!a || !b) return;
+    const a = this.__lastRegion
+    const b = nextProps.region
+    if (!a || !b) return
     if (
       a.latitude !== b.latitude ||
       a.longitude !== b.longitude ||
       a.latitudeDelta !== b.latitudeDelta ||
       a.longitudeDelta !== b.longitudeDelta
     ) {
-      this.map.setNativeProps({ region: b });
+      this.map.setNativeProps({ region: b })
     }
   }
 
   componentDidMount() {
-    const { isReady } = this.state;
+    const { isReady } = this.state
     if (isReady) {
-      this._updateStyle();
+      this._updateStyle()
     }
   }
 
   _updateStyle() {
-    const { customMapStyle } = this.props;
-    this.map.setNativeProps({ customMapStyleString: JSON.stringify(customMapStyle) });
+    const { customMapStyle } = this.props
+    this.map.setNativeProps({
+      customMapStyleString: JSON.stringify(customMapStyle)
+    })
   }
 
   _onMapReady() {
-    const { region, initialRegion } = this.props;
+    const { region, initialRegion } = this.props
     if (region) {
-      this.map.setNativeProps({ region });
+      this.map.setNativeProps({ region })
     } else if (initialRegion) {
-      this.map.setNativeProps({ region: initialRegion });
+      this.map.setNativeProps({ region: initialRegion })
     }
-    this._updateStyle();
-    this.setState({ isReady: true });
+    this._updateStyle()
+    this.setState({ isReady: true })
   }
 
   _onLayout(e) {
-    const { region, initialRegion, onLayout } = this.props;
-    const { isReady } = this.state;
-    const { layout } = e.nativeEvent;
-    if (!layout.width || !layout.height) return;
+    const { region, initialRegion, onLayout } = this.props
+    const { isReady } = this.state
+    const { layout } = e.nativeEvent
+    if (!layout.width || !layout.height) return
     if (region && isReady && !this.__layoutCalled) {
-      this.__layoutCalled = true;
-      this.map.setNativeProps({ region });
+      this.__layoutCalled = true
+      this.map.setNativeProps({ region })
     } else if (initialRegion && isReady && !this.__layoutCalled) {
-      this.__layoutCalled = true;
-      this.map.setNativeProps({ region: initialRegion });
+      this.__layoutCalled = true
+      this.map.setNativeProps({ region: initialRegion })
     }
     if (onLayout) {
-      onLayout(e);
+      onLayout(e)
     }
   }
 
   _onChange(event) {
-    this.__lastRegion = event.nativeEvent.region;
+    this.__lastRegion = event.nativeEvent.region
     if (event.nativeEvent.continuous) {
       if (this.props.onRegionChange) {
-        this.props.onRegionChange(event.nativeEvent.region);
+        this.props.onRegionChange(event.nativeEvent.region)
       }
     } else if (this.props.onRegionChangeComplete) {
-      this.props.onRegionChangeComplete(event.nativeEvent.region);
+      this.props.onRegionChangeComplete(event.nativeEvent.region)
     }
   }
 
   animateToRegion(region, duration) {
-    this._runCommand('animateToRegion', [region, duration || 500]);
+    this._runCommand('animateToRegion', [region, duration || 500])
   }
 
   animateToCoordinate(latLng, duration) {
-    this._runCommand('animateToCoordinate', [latLng, duration || 500]);
+    this._runCommand('animateToCoordinate', [latLng, duration || 500])
   }
 
   fitToElements(animated) {
-    this._runCommand('fitToElements', [animated]);
+    this._runCommand('fitToElements', [animated])
   }
 
   fitToSuppliedMarkers(markers, animated) {
-    this._runCommand('fitToSuppliedMarkers', [markers, animated]);
+    this._runCommand('fitToSuppliedMarkers', [markers, animated])
   }
 
   fitToCoordinates(coordinates = [], options) {
     const {
       edgePadding = { top: 0, right: 0, bottom: 0, left: 0 },
-      animated = true,
-    } = options;
+      animated = true
+    } = options
 
-    this._runCommand('fitToCoordinates', [coordinates, edgePadding, animated]);
+    this._runCommand('fitToCoordinates', [coordinates, edgePadding, animated])
   }
 
   /**
@@ -496,12 +493,14 @@ class MapView extends React.Component {
     // For the time being we support the legacy API on iOS.
     // This will be removed in a future release and only the
     // new Promise style API shall be supported.
-    if (Platform.OS === 'ios' && (arguments.length === 4)) {
-      console.warn('Old takeSnapshot API has been deprecated; will be removed in the near future'); //eslint-disable-line
-      const width = arguments[0]; // eslint-disable-line
-      const height = arguments[1]; // eslint-disable-line
-      const region = arguments[2]; // eslint-disable-line
-      const callback = arguments[3]; // eslint-disable-line
+    if (Platform.OS === 'ios' && arguments.length === 4) {
+      console.warn(
+        'Old takeSnapshot API has been deprecated; will be removed in the near future'
+      ) //eslint-disable-line
+      const width = arguments[0] // eslint-disable-line
+      const height = arguments[1] // eslint-disable-line
+      const region = arguments[2] // eslint-disable-line
+      const callback = arguments[3] // eslint-disable-line
       this._runCommand('takeSnapshot', [
         width || 0,
         height || 0,
@@ -509,9 +508,9 @@ class MapView extends React.Component {
         'png',
         1,
         'legacy',
-        callback,
-      ]);
-      return undefined;
+        callback
+      ])
+      return undefined
     }
 
     // Sanitize inputs
@@ -521,16 +520,16 @@ class MapView extends React.Component {
       region: args.region || {},
       format: args.format || 'png',
       quality: args.quality || 1.0,
-      result: args.result || 'file',
-    };
-    if ((config.format !== 'png') &&
-        (config.format !== 'jpg')) throw new Error('Invalid format specified');
-    if ((config.result !== 'file') &&
-        (config.result !== 'base64')) throw new Error('Invalid result specified');
+      result: args.result || 'file'
+    }
+    if (config.format !== 'png' && config.format !== 'jpg')
+      throw new Error('Invalid format specified')
+    if (config.result !== 'file' && config.result !== 'base64')
+      throw new Error('Invalid result specified')
 
     // Call native function
     if (Platform.OS === 'android') {
-      return NativeModules.AirMapModule.takeSnapshot(this._getHandle(), config);
+      return NativeModules.AirMapModule.takeSnapshot(this._getHandle(), config)
     } else if (Platform.OS === 'ios') {
       return new Promise((resolve, reject) => {
         this._runCommand('takeSnapshot', [
@@ -542,27 +541,29 @@ class MapView extends React.Component {
           config.result,
           (err, snapshot) => {
             if (err) {
-              reject(err);
+              reject(err)
             } else {
-              resolve(snapshot);
+              resolve(snapshot)
             }
-          },
-        ]);
-      });
+          }
+        ])
+      })
     }
-    return Promise.reject('takeSnapshot not supported on this platform');
+    return Promise.reject('takeSnapshot not supported on this platform')
   }
 
   _uiManagerCommand(name) {
-    return NativeModules.UIManager[getAirMapName(this.props.provider)].Commands[name];
+    return NativeModules.UIManager[getAirMapName(this.props.provider)].Commands[
+      name
+    ]
   }
 
   _mapManagerCommand(name) {
-    return NativeModules[`${getAirMapName(this.props.provider)}Manager`][name];
+    return NativeModules[`${getAirMapName(this.props.provider)}Manager`][name]
   }
 
   _getHandle() {
-    return findNodeHandle(this.map);
+    return findNodeHandle(this.map)
   }
 
   _runCommand(name, args) {
@@ -572,20 +573,20 @@ class MapView extends React.Component {
           this._getHandle(),
           this._uiManagerCommand(name),
           args
-        );
-        break;
+        )
+        break
 
       case 'ios':
-        this._mapManagerCommand(name)(this._getHandle(), ...args);
-        break;
+        this._mapManagerCommand(name)(this._getHandle(), ...args)
+        break
 
       default:
-        break;
+        break
     }
   }
 
   render() {
-    let props;
+    let props
 
     if (this.state.isReady) {
       props = {
@@ -594,13 +595,16 @@ class MapView extends React.Component {
         initialRegion: null,
         onChange: this._onChange,
         onMapReady: this._onMapReady,
-        onLayout: this._onLayout,
-      };
-      if (Platform.OS === 'ios' && props.provider === ProviderConstants.PROVIDER_DEFAULT
-        && GOOGLE_MAPS_ONLY_TYPES.includes(props.mapType)) {
-        props.mapType = MAP_TYPES.standard;
+        onLayout: this._onLayout
       }
-      props.handlePanDrag = !!props.onPanDrag;
+      if (
+        Platform.OS === 'ios' &&
+        props.provider === ProviderConstants.PROVIDER_DEFAULT &&
+        GOOGLE_MAPS_ONLY_TYPES.includes(props.mapType)
+      ) {
+        props.mapType = MAP_TYPES.standard
+      }
+      props.handlePanDrag = !!props.onPanDrag
     } else {
       props = {
         style: this.props.style,
@@ -608,73 +612,82 @@ class MapView extends React.Component {
         initialRegion: null,
         onChange: this._onChange,
         onMapReady: this._onMapReady,
-        onLayout: this._onLayout,
-      };
+        onLayout: this._onLayout
+      }
     }
 
     if (Platform.OS === 'android' && this.props.liteMode) {
       return (
         <AIRMapLite
-          ref={ref => { this.map = ref; }}
+          ref={ref => {
+            this.map = ref
+          }}
           {...props}
         />
-      );
+      )
     }
 
-    const AIRMap = getAirMapComponent(this.props.provider);
+    const AIRMap = getAirMapComponent(this.props.provider)
 
     return (
       <AIRMap
-        ref={ref => { this.map = ref; }}
+        ref={ref => {
+          this.map = ref
+        }}
         {...props}
       />
-    );
+    )
   }
 }
 
-MapView.propTypes = propTypes;
-MapView.viewConfig = viewConfig;
-MapView.childContextTypes = childContextTypes;
+MapView.propTypes = propTypes
+MapView.viewConfig = viewConfig
+MapView.childContextTypes = childContextTypes
 
-MapView.MAP_TYPES = MAP_TYPES;
+MapView.MAP_TYPES = MAP_TYPES
 
-const nativeComponent = Component => requireNativeComponent(Component, MapView, {
-  nativeOnly: {
-    onChange: true,
-    onMapReady: true,
-    handlePanDrag: true,
-  },
-});
+const nativeComponent = Component =>
+  requireNativeComponent(Component, MapView, {
+    nativeOnly: {
+      onChange: true,
+      onMapReady: true,
+      handlePanDrag: true
+    }
+  })
 const airMaps = {
-  default: nativeComponent('AIRMap'),
-};
-if (Platform.OS === 'android') {
-  airMaps.google = airMaps.default;
-} else {
-  airMaps.google = googleMapIsInstalled ? nativeComponent('AIRGoogleMap') :
-    createNotSupportedComponent('react-native-maps: AirGoogleMaps dir must be added to your xCode project to support GoogleMaps on iOS.'); // eslint-disable-line max-len
+  default: nativeComponent('AIRMap')
 }
-const getAirMapComponent = provider => airMaps[provider || 'default'];
+if (Platform.OS === 'android') {
+  airMaps.google = airMaps.default
+} else {
+  airMaps.google = googleMapIsInstalled
+    ? nativeComponent('AIRGoogleMap')
+    : createNotSupportedComponent(
+        'react-native-maps: AirGoogleMaps dir must be added to your xCode project to support GoogleMaps on iOS.'
+      ) // eslint-disable-line max-len
+}
+const getAirMapComponent = provider => airMaps[provider || 'default']
 
-const AIRMapLite = NativeModules.UIManager.AIRMapLite &&
+const AIRMapLite =
+  NativeModules.UIManager.AIRMapLite &&
   requireNativeComponent('AIRMapLite', MapView, {
     nativeOnly: {
       onChange: true,
       onMapReady: true,
-      handlePanDrag: true,
-    },
-  });
+      handlePanDrag: true
+    }
+  })
 
-MapView.Marker = MapMarker;
-MapView.Polyline = MapPolyline;
-MapView.Polygon = MapPolygon;
-MapView.Circle = MapCircle;
-MapView.UrlTile = MapUrlTile;
-MapView.Callout = MapCallout;
-Object.assign(MapView, ProviderConstants);
-MapView.ProviderPropType = PropTypes.oneOf(Object.values(ProviderConstants));
+MapView.Marker = MapMarker
+MapView.Polyline = MapPolyline
+MapView.Polygon = MapPolygon
+MapView.Circle = MapCircle
+MapView.UrlTile = MapUrlTile
+MapView.Callout = MapCallout
+Object.assign(MapView, ProviderConstants)
+MapView.ProviderPropType = PropTypes.oneOf(Object.values(ProviderConstants))
 
-MapView.Animated = Animated.createAnimatedComponent(MapView);
-MapView.AnimatedRegion = AnimatedRegion;
+MapView.Animated = Animated.createAnimatedComponent(MapView)
+MapView.AnimatedRegion = AnimatedRegion
 
-module.exports = MapView;
+module.exports = MapView
